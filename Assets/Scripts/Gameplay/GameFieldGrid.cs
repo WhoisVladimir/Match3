@@ -32,16 +32,15 @@ namespace Gameplay
                     var cellPosition = new Vector2(transform.position.x + i, transform.position.y + j);
                     grid[i, j] = Instantiate(cell, cellPosition, transform.rotation, transform);
 
-                    //пересмотреть устройство сетки
                     if (i - 1 >= 0)
                     {
-                        grid[i, j].HorizontalAdjacentCells.Add(grid[i - 1, j]);
-                        grid[i - 1, j].HorizontalAdjacentCells.Add(grid[i, j]);
+                        grid[i, j].SetLeftCell(grid[i - 1, j]);
+                        grid[i - 1, j].SetRightCell(grid[i, j]);
                     }
                     if (j - 1 >= 0)
                     {
-                        grid[i, j].VerticalAdjacentCells.Add(grid[i, j - 1]);
-                        grid[i, j - 1].VerticalAdjacentCells.Add(grid[i, j]);
+                        grid[i, j].SetDownCell(grid[i, j - 1]);
+                        grid[i, j - 1].SetTopCell(grid[i, j]);
                     }
                 }
             }
@@ -53,7 +52,6 @@ namespace Gameplay
         /// <param name="content">Список возможного содержимого (перенести в более адекватное место)</param>
         public void FillGrid(List<CellContent> content)
         {
-            var gameplayCntrl = GameplayController.Instance;
             for (int i = 0; i < columnsCount; i++)
             {
                 for (int j = 0; j < linesCount; j++)
@@ -68,9 +66,9 @@ namespace Gameplay
                             abbreviatedList.AddRange(content);
                             abbreviatedList.Remove(previousContent);
 
-                            gameplayCntrl.FillCell(grid[i, j], abbreviatedList);
+                            grid[i, j].FillCell(abbreviatedList);
                         }
-                        else gameplayCntrl.FillCell(grid[i, j]);
+                        else grid[i, j].FillCell(content);
                     }
 
                     if (i - 2 >= 0)
@@ -81,12 +79,12 @@ namespace Gameplay
                             if (abbreviatedList.Count == 0) abbreviatedList.AddRange(content);
 
                             abbreviatedList.Remove(previousContent);
-                            gameplayCntrl.FillCell(grid[i, j], abbreviatedList);
+                            grid[i, j].FillCell(abbreviatedList);
                         }
-                        else if (grid[i, j].IsEmpty) gameplayCntrl.FillCell(grid[i, j]);
+                        else if (grid[i, j].IsEmpty) grid[i, j].FillCell(content);
                     }
 
-                    if (j - 2 < 0 && i - 2 < 0) gameplayCntrl.FillCell(grid[i, j]);
+                    if (j - 2 < 0 && i - 2 < 0) grid[i, j].FillCell(content);
                 }
             }
         }

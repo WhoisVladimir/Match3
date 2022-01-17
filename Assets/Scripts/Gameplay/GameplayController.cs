@@ -6,7 +6,6 @@ namespace Gameplay
     public class GameplayController : Singleton<GameplayController>
     {
         [SerializeField] private List<GameLevel> gameLevels;
-        [SerializeField] private GameObject cellContentObject;
 
         private GameLevel currentLevel;
         private int boundIndex = 100;
@@ -42,33 +41,6 @@ namespace Gameplay
                 SetLevel(++index);
             }
             return level;
-        }
-
-        /// <summary>
-        /// Ћогика заполнени€ 
-        /// </summary>
-        /// <param name="cell"></param>
-        /// <param name="contentList">—писок доступного неповтор€ющегос€ контента</param>
-        public void FillCell(GameFieldGridCell cell, List<CellContent> contentList = null)
-        {
-            if (contentList == null) contentList = lvlContentItems;
-
-            var cellTf = cell.transform;
-            CellContentObject contentObject;
-
-            if (cell.IsEmpty)
-            {
-                contentObject =
-                    Instantiate(cellContentObject, cellTf.position, cellTf.rotation, GameFieldGrid.Instance.transform)
-                    .GetComponent<CellContentObject>();
-            }
-
-            else contentObject = cell.ContentObject;
-
-            var contentItemIndex = Random.Range(0, contentList.Count);
-            contentObject.SetObjectContent(contentList[contentItemIndex]);
-
-            cell.SetCellContent(contentObject);
         }
 
     }
