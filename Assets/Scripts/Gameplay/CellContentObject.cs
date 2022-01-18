@@ -1,4 +1,4 @@
-using UnityEngine;
+п»їusing UnityEngine;
 
 namespace Gameplay
 {
@@ -9,9 +9,9 @@ namespace Gameplay
         public CellContent Content { get; private set; }
 
         /// <summary>
-        /// Присваивает содержимое объекту
+        /// РџСЂРёСЃРІР°РёРІР°РµС‚ СЃРѕРґРµСЂР¶РёРјРѕРµ РѕР±СЉРµРєС‚Сѓ
         /// </summary>
-        /// <param name="externalContent">Содержимое</param>
+        /// <param name="externalContent">РЎРѕРґРµСЂР¶РёРјРѕРµ</param>
         public void SetObjectContent(CellContent externalContent)
         {
             Content = externalContent;

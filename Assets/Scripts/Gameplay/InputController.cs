@@ -1,4 +1,4 @@
-using UnityEngine;
+п»їusing UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
 
@@ -17,7 +17,7 @@ namespace Gameplay
         }
 
         /// <summary>
-        /// Определяет направление перемещения указателя после нажатия.
+        /// РћРїСЂРµРґРµР»СЏРµС‚ РЅР°РїСЂР°РІР»РµРЅРёРµ РїРµСЂРµРјРµС‰РµРЅРёСЏ СѓРєР°Р·Р°С‚РµР»СЏ РїРѕСЃР»Рµ РЅР°Р¶Р°С‚РёСЏ.
         /// </summary>
         /// <param name="context"></param>
         public void TapCellContent(InputAction.CallbackContext context)

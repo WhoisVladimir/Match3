@@ -1,4 +1,4 @@
-namespace InitBootSystem
+﻿namespace InitBootSystem
 {
     public class GameManager : Singleton<GameManager>
     {

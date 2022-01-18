@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+п»їusing System.Collections.Generic;
 using UnityEngine;
 
 namespace Gameplay
@@ -24,13 +24,13 @@ namespace Gameplay
         }
 
         /// <summary>
-        /// Назначает уровень.
+        /// РќР°Р·РЅР°С‡Р°РµС‚ СѓСЂРѕРІРµРЅСЊ.
         /// </summary>
-        /// <param name="index">Порядковый номер уровня.</param>
+        /// <param name="index">РџРѕСЂСЏРґРєРѕРІС‹Р№ РЅРѕРјРµСЂ СѓСЂРѕРІРЅСЏ.</param>
         /// <returns></returns>
         private GameLevel SetLevel(int index)
         {
-            //реализовать логику завершающую игру
+            //СЂРµР°Р»РёР·РѕРІР°С‚СЊ Р»РѕРіРёРєСѓ Р·Р°РІРµСЂС€Р°СЋС‰СѓСЋ РёРіСЂСѓ
             if (index == boundIndex) return null;
 
             var level = gameLevels.Find(lvl => lvl.LvlIndexNumber == index);
@@ -44,11 +44,11 @@ namespace Gameplay
         }
 
         /// <summary>
-        /// Перемещение объекта содержимого в ячейку
+        /// РџРµСЂРµРјРµС‰РµРЅРёРµ РѕР±СЉРµРєС‚Р° СЃРѕРґРµСЂР¶РёРјРѕРіРѕ РІ СЏС‡РµР№РєСѓ
         /// </summary>
-        /// <param name="cell">Ячейка из которой перемещается объект</param>
-        /// <param name="direction">Направление в котором перемещается объект</param>
-        /// <param name="isIntentialAction">Является ли перемещение следствием ввода игрока</param>
+        /// <param name="cell">РЇС‡РµР№РєР° РёР· РєРѕС‚РѕСЂРѕР№ РїРµСЂРµРјРµС‰Р°РµС‚СЃСЏ РѕР±СЉРµРєС‚</param>
+        /// <param name="direction">РќР°РїСЂР°РІР»РµРЅРёРµ РІ РєРѕС‚РѕСЂРѕРј РїРµСЂРµРјРµС‰Р°РµС‚СЃСЏ РѕР±СЉРµРєС‚</param>
+        /// <param name="isIntentialAction">РЇРІР»СЏРµС‚СЃСЏ Р»Рё РїРµСЂРµРјРµС‰РµРЅРёРµ СЃР»РµРґСЃС‚РІРёРµРј РІРІРѕРґР° РёРіСЂРѕРєР°</param>
         public void MoveCellContent(GameFieldGridCell cell, DirectionType direction, bool isIntentialAction)
         {
             var contentObj = cell.ContentObject;
@@ -56,24 +56,24 @@ namespace Gameplay
             if (targetCell.IsEmpty) targetCell.FillCell(contentObj);
             else
             {
-                Debug.Log($"Движение: {direction} {cell.ContentObject.Content.ContentType}");
+                Debug.Log($"Р”РІРёР¶РµРЅРёРµ: {direction} {cell.ContentObject.Content.ContentType}");
                 if (isIntentialAction) SwitchCellContent(cell, targetCell);
             }
         }
 
         /// <summary>
-        /// Замена объекта содержимого.
+        /// Р—Р°РјРµРЅР° РѕР±СЉРµРєС‚Р° СЃРѕРґРµСЂР¶РёРјРѕРіРѕ.
         /// </summary>
-        /// <param name="cell">Ячейка из котрой производится замена</param>
-        /// <param name="targetCell">Ячейка в которую производится замена</param>
+        /// <param name="cell">РЇС‡РµР№РєР° РёР· РєРѕС‚СЂРѕР№ РїСЂРѕРёР·РІРѕРґРёС‚СЃСЏ Р·Р°РјРµРЅР°</param>
+        /// <param name="targetCell">РЇС‡РµР№РєР° РІ РєРѕС‚РѕСЂСѓСЋ РїСЂРѕРёР·РІРѕРґРёС‚СЃСЏ Р·Р°РјРµРЅР°</param>
         public void SwitchCellContent(GameFieldGridCell cell, GameFieldGridCell targetCell)
         {
             var tempContentObj = targetCell.ContentObject;
-            Debug.Log($"Произошла замена на {tempContentObj.Content.ContentType}");
+            Debug.Log($"РџСЂРѕРёР·РѕС€Р»Р° Р·Р°РјРµРЅР° РЅР° {tempContentObj.Content.ContentType}");
             targetCell.FillCell(cell.ContentObject);
             cell.FillCell(tempContentObj);
-            Debug.Log($"Целевая ячейка: {targetCell.ContentObject.Content.ContentType}");
-            Debug.Log($"Ячейка источник: {cell.ContentObject.Content.ContentType}");
+            Debug.Log($"Р¦РµР»РµРІР°СЏ СЏС‡РµР№РєР°: {targetCell.ContentObject.Content.ContentType}");
+            Debug.Log($"РЇС‡РµР№РєР° РёСЃС‚РѕС‡РЅРёРє: {cell.ContentObject.Content.ContentType}");
 
             targetCell.CheckAdjacentCells();
             cell.CheckAdjacentCells();

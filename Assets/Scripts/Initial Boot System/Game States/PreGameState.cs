@@ -1,4 +1,4 @@
-using System;
+п»їusing System;
 using UnityEngine.Events;
 using UnityEngine.SceneManagement;
 
@@ -8,15 +8,15 @@ namespace InitBootSystem
     {
         private readonly string mainMenuSceneName = "MainMenu";
         //to do:
-        //загрузка сцены "Главное меню"
-        //переход к состоянию игры
-        //переход к состоянию выхода
+        //Р·Р°РіСЂСѓР·РєР° СЃС†РµРЅС‹ "Р“Р»Р°РІРЅРѕРµ РјРµРЅСЋ"
+        //РїРµСЂРµС…РѕРґ Рє СЃРѕСЃС‚РѕСЏРЅРёСЋ РёРіСЂС‹
+        //РїРµСЂРµС…РѕРґ Рє СЃРѕСЃС‚РѕСЏРЅРёСЋ РІС‹С…РѕРґР°
 
         public override void LoadState()
         {
             //to do:
-            //асинхронно загрузить главное меню
-            //гм должен остаться в своей сцене, но активной будет загруженная
+            //Р°СЃРёРЅС…СЂРѕРЅРЅРѕ Р·Р°РіСЂСѓР·РёС‚СЊ РіР»Р°РІРЅРѕРµ РјРµРЅСЋ
+            //РіРј РґРѕР»Р¶РµРЅ РѕСЃС‚Р°С‚СЊСЃСЏ РІ СЃРІРѕРµР№ СЃС†РµРЅРµ, РЅРѕ Р°РєС‚РёРІРЅРѕР№ Р±СѓРґРµС‚ Р·Р°РіСЂСѓР¶РµРЅРЅР°СЏ
 
             var mainSceneLoading = SceneManager.LoadSceneAsync(mainMenuSceneName, LoadSceneMode.Additive);
             mainSceneLoading.completed += OnSceneLoading;
