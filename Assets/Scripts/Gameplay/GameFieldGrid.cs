@@ -5,8 +5,8 @@ namespace Gameplay
 {
     public class GameFieldGrid : Singleton<GameFieldGrid>
     {
-        private int columnsCount = 5;
-        private int linesCount = 6;
+        private const int columnsCount = 5;
+        private const int linesCount = 6;
 
         private GameFieldGridCell[,] grid;
 
@@ -19,7 +19,7 @@ namespace Gameplay
         }
 
         /// <summary>
-        /// —оздаЄт сетку с пустыми €чейками.
+        /// —оздаЄт сетку с пустыми €чейками, добавл€ет соседние €чейки.
         /// </summary>
         public void CreateGrid()
         {
@@ -34,13 +34,13 @@ namespace Gameplay
 
                     if (i - 1 >= 0)
                     {
-                        grid[i, j].SetLeftCell(grid[i - 1, j]);
-                        grid[i - 1, j].SetRightCell(grid[i, j]);
+                        grid[i, j].SetAdjacentCell(DirectionType.LEFT, grid[i - 1, j]);
+                        grid[i - 1, j].SetAdjacentCell(DirectionType.RIGHT, grid[i, j]);
                     }
                     if (j - 1 >= 0)
                     {
-                        grid[i, j].SetDownCell(grid[i, j - 1]);
-                        grid[i, j - 1].SetTopCell(grid[i, j]);
+                        grid[i, j].SetAdjacentCell(DirectionType.DOWN, grid[i, j - 1]);
+                        grid[i, j - 1].SetAdjacentCell(DirectionType.TOP, grid[i, j]);
                     }
                 }
             }
