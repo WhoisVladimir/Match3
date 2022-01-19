@@ -1,21 +1,36 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System.Collections.Generic;
 using UnityEngine;
 
 namespace Gameplay
 {
+    public delegate void CellAction(GameFieldGridCell actingCell);
+
     public class GameFieldGridCell : MonoBehaviour
     {
+        public static event CellAction CellEmptying;
+        public static event CellAction ContentEnded;
+
         [SerializeField] private GameObject contentGObj;
 
         public CellContentObject ContentObject { get; private set; }
         public bool IsEmpty { get; private set; } = true;
         public Dictionary<DirectionType, GameFieldGridCell> AdjacentCells { get; private set; }
+        public int RowNumber { get; private set; }
+        public int Index { get; private set; }
 
         private void Awake()
         {
             AdjacentCells = new Dictionary<DirectionType, GameFieldGridCell>();
+        }
+
+        private void OnEnable()
+        {
+            CellEmptying += OnCellEmptying;
+        }
+
+        private void OnDisable()
+        {
+            CellEmptying -= OnCellEmptying;
         }
 
         /// <summary>
@@ -29,7 +44,7 @@ namespace Gameplay
         }
 
         /// <summary>
-        /// Логика заполнения ячейки
+        /// Заполнение ячейки рандомным контентом
         /// </summary>
         /// <param name="cell"></param>
         /// <param name="contentList">Список доступного неповторяющегося контента</param>
@@ -44,86 +59,66 @@ namespace Gameplay
             ContentObject = contentGObj.GetComponent<CellContentObject>();
             var contentItemIndex = Random.Range(0, contentList.Count);
             ContentObject.SetObjectContent(contentList[contentItemIndex]);
+            ContentObject.SetObjectLocationCell(this);
         }
 
         /// <summary>
-        /// Логика заполнения ячейки
+        /// Заполнение ячейки конкретном контентом
         /// </summary>
         /// <param name="contentObject">Объект содержимого ячейки</param>
         public void FillCell(CellContentObject contentObject)
         {
             ContentObject = contentObject;
             ContentObject.transform.position = transform.position;
+            ContentObject.DetachObjectLocationCell();
+            ContentObject.SetObjectLocationCell(this);
         }
 
-        /// <summary>
-        /// Проверка соседних ячеек на совпадение содержимого.
-        /// </summary>
-        public void CheckAdjacentCells()
+        public void EmptyCell(bool isMatch = false)
         {
-            Debug.Log($"Проверяем {ContentObject.Content.ContentType} {GetHashCode()}");
-            var checkedCells = new Stack<GameFieldGridCell>();
-            var verticalMatches = new List<CellContentObject>();
-            var horizontalMatches = new List<CellContentObject>();
+            if(isMatch) ContentObject.gameObject.SetActive(false);
 
-            verticalMatches.Add(ContentObject);
-            horizontalMatches.Add(ContentObject);
+            ContentObject.DetachObjectLocationCell();
+            ContentObject = null;
+            IsEmpty = true;
 
-            Debug.Log($"Добавлен объект-источник. vertical: {verticalMatches.Count} horizontal: {horizontalMatches.Count}");
+            CellEmptying?.Invoke(this);
+        }
 
-            foreach (var item in AdjacentCells)
+        private void OnCellEmptying(GameFieldGridCell actingCell)
+        {
+            var gameplay = GameplayController.Instance;
+            DirectionType spawnerDirection;
+
+            if (gameplay.SpawnDirection == DirectionType.DOWN) spawnerDirection = DirectionType.TOP;
+            else spawnerDirection = DirectionType.DOWN;
+
+            if(AdjacentCells.TryGetValue(gameplay.SpawnDirection, out var item))
             {
-                checkedCells.Push(item.Value);
-                Debug.Log($"Заполнение очереди: {item.Key} {item.Value.ContentObject.Content.ContentType}");
-            }
-
-            var sourceCell = this;
-            Debug.Log($"Хэш источника: {sourceCell.GetHashCode()}");
-            while (checkedCells.Count > 0)
-            {
-                var targetCell = checkedCells.Pop();
-                Debug.Log($"Проверка в цикле {targetCell.ContentObject.Content.ContentType}");
-                Debug.Log($"Изменение очереди: {checkedCells.Count}");
-
-                var currentDirectionType = sourceCell.AdjacentCells
-                    .Where(pair => pair.Value.Equals(targetCell))
-                    .Select(pair => pair.Key)
-                    .FirstOrDefault();
-                Debug.Log($"Тип значится как: {currentDirectionType}");
-                if (sourceCell.ContentObject.Content.ContentType == targetCell.ContentObject.Content.ContentType)
+                if (actingCell == item)
                 {
-                    Debug.Log("Контент совпал");
-                    if (currentDirectionType == DirectionType.DOWN || currentDirectionType == DirectionType.TOP)
+                    if (ContentObject == null)
                     {
-                        verticalMatches.Add(targetCell.ContentObject);
-                        Debug.Log($"Добавление в vertical. {verticalMatches.Count}");
-                    }
-                    else
-                    {
-                        horizontalMatches.Add(targetCell.ContentObject);
-                        Debug.Log($"Добавление в horizontal. {horizontalMatches.Count}");
-                    }
+                        while (AdjacentCells.TryGetValue(spawnerDirection, out var previousCell))
+                        {
 
-                    if (targetCell.AdjacentCells.TryGetValue(currentDirectionType, out var adjacentCell))
-                    {
-                        Debug.Log($"Проверка на продолжение типа ячейки: {currentDirectionType} ? {adjacentCell}");
-                        checkedCells.Push(adjacentCell);
-                        Debug.Log($"Изменение очереди: {checkedCells.Count}");
-                        sourceCell = targetCell;
+                        }
                     }
-                    else sourceCell = this;
-
+                    gameplay.MoveCellContent(this, gameplay.SpawnDirection, false);
+                    EmptyCell();
                 }
-                else sourceCell = this;
 
-                
-                Debug.Log($"Конец цикла. Обновление источника-ячейки {sourceCell.ContentObject.Content.ContentType} {sourceCell.GetHashCode()}");
             }
+            else
+            {
+                ContentEnded?.Invoke(this);
+            }
+        }
 
-            if (verticalMatches.Count >= 3) Debug.Log($"{verticalMatches.Count} {ContentObject.Content.ContentType} by vertical!");
-            else Debug.Log("No equals by vertical!");
-            if (horizontalMatches.Count >= 3) Debug.Log($"{horizontalMatches.Count} {ContentObject.Content.ContentType} by horizontal!");
-            else Debug.Log("No equals by horizontal!");
+        public void SetIndex(int index, int rowNumber)
+        {
+            RowNumber = rowNumber;
+            Index = index;
         }
     }
 }
