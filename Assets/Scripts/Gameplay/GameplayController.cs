@@ -26,16 +26,6 @@ namespace Gameplay
             GameFieldGrid.Instance.FillGrid(lvlContentItems);
         }
 
-        private void OnEnable()
-        {
-            GameFieldGridCell.ContentEnded += OnContentEnded;
-        }
-
-        private void OnDisable()
-        {
-            GameFieldGridCell.ContentEnded -= OnContentEnded;
-        }
-
         /// <summary>
         /// Назначает уровень.
         /// </summary>
@@ -64,14 +54,18 @@ namespace Gameplay
         /// <param name="isIntentialAction">Является ли перемещение следствием ввода игрока</param>
         public void MoveCellContent(GameFieldGridCell cell, DirectionType direction, bool isIntentialAction)
         {
+            Debug.Log("Обработка движения");
             var contentObj = cell.ContentObject;
             if (!cell.AdjacentCells.TryGetValue(direction, out var targetCell)) Debug.Log("Bound cell");
-            if (targetCell.IsEmpty) targetCell.FillCell(contentObj);
-            else
-            {
-                Debug.Log($"Движение: {direction} {cell.ContentObject.Content.ContentType}");
-                if (isIntentialAction) SwitchCellContent(cell, targetCell);
-            }
+            //if (targetCell.IsEmpty) targetCell.FillCell(contentObj);
+
+            if (isIntentialAction) SwitchCellContent(cell, targetCell);
+
+            //else
+            //{
+            //    Debug.Log($"Движение: {direction} {cell.ContentObject.Content.ContentType}");
+            //    if (isIntentialAction) SwitchCellContent(cell, targetCell);
+            //}
         }
 
         /// <summary>
@@ -188,38 +182,14 @@ namespace Gameplay
 
         public void MatchesHandling(List<CellContentObject> contentObjects)
         {
+
             if (contentObjects.Count < 3) return;
-            Debug.Log("Обработка совпадения");
+            Debug.Log($"Обработка совпадения {contentObjects[0].Content.ContentType}");
+
             foreach (var item in contentObjects)
             {
                 item.LocationCell.EmptyCell(true);
             }
-        }
-
-        public void OnCellEmptying(GameFieldGridCell emptyCell)
-        {
-            DirectionType direction;
-            if (SpawnDirection == DirectionType.DOWN) direction = DirectionType.TOP;
-            else direction = DirectionType.DOWN;
-
-            var adjacentCells = GameFieldGrid.Instance.GetAdjacentCells(emptyCell, direction);
-
-            while (adjacentCells.Count > 0)
-            {
-                var currentCell = adjacentCells.Dequeue();
-                if(currentCell.AdjacentCells.TryGetValue(SpawnDirection, out var adjacentCell))
-                {
-                    while (adjacentCell.IsEmpty)
-                    {
-                        MoveCellContent(currentCell, SpawnDirection, false);
-                    }
-                }
-            }
-        }
-
-        private void OnContentEnded(GameFieldGridCell actingCell)
-        {
-            actingCell.FillCell(lvlContentItems);
         }
     }
 }

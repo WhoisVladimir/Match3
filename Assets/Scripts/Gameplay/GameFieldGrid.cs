@@ -12,6 +12,7 @@ namespace Gameplay
         private const int linesCount = 6;
 
         private GameFieldGridCell[,] grid;
+        private List<CellContent> lvlContent;
 
         [SerializeField] private GameFieldGridCell cell;
 
@@ -20,6 +21,50 @@ namespace Gameplay
             base.Awake();
             LinkedContentGrid = new Dictionary<int, LinkedList<CellContentObject>>();
             CreateGrid();
+        }
+
+        private void OnEnable()
+        {
+            GameFieldGridCell.CellEmptying += OnCellEmptying;
+        }
+
+        private void OnDisable()
+        {
+            GameFieldGridCell.CellEmptying -= OnCellEmptying;
+        }
+
+        public void OnCellEmptying(GameFieldGridCell actingCell, CellContentObject contentObject)
+        {
+            Debug.Log($"Сеть отреагировала на событие в [{actingCell.RowNumber}, {actingCell.Index}]");
+            var rowNumber = actingCell.RowNumber;
+            LinkedContentGrid.TryGetValue(rowNumber, out var row);
+
+            var ar = row.ToArray();
+            Debug.Log($"Предыдущий список ряда ({row.Count}):");
+            foreach (var item in ar)
+            {
+                Debug.Log(item.Content.ContentType);
+            }
+
+            var node = row.Find(contentObject);
+
+            for (int i = actingCell.Index; i < linesCount - 1; i++)
+            {
+                grid[rowNumber, i].FillCell(node.Next.Value);
+            }
+            row.Remove(node);
+
+            grid[rowNumber, linesCount - 1].FillCell(contentObject, lvlContent);
+            row.AddLast(contentObject);
+
+            Debug.Log($"Текущий список ряда ({row.Count}):");
+            ar = row.ToArray();
+            foreach (var item in ar)
+            {
+                Debug.Log(item.Content.ContentType);
+            }
+
+
         }
 
         /// <summary>
@@ -57,6 +102,7 @@ namespace Gameplay
         /// <param name="content">Список возможного содержимого (перенести в более адекватное место)</param>
         public void FillGrid(List<CellContent> content)
         {
+            lvlContent = content;
             for (int i = 0; i < columnsCount; i++)
             {
                 var linkedContentRow = new LinkedList<CellContentObject>();
@@ -101,7 +147,7 @@ namespace Gameplay
                     }
                     else linkedContentRow.AddAfter(linkedContentRow.Last, contentObject);
 
-                    grid[i, j].SetIndex(i);
+                    grid[i, j].SetIndex(j, i);
                 }
             }
         }
