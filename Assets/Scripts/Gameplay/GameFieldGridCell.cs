@@ -1,9 +1,10 @@
 ﻿using System.Collections.Generic;
+using System.Collections;
 using UnityEngine;
 
 namespace Gameplay
 {
-    public delegate void CellAction(GameFieldGridCell actingCell, CellContentObject contentObject);
+    public delegate void CellAction(GameFieldGridCell actingCell);
 
     public class GameFieldGridCell : MonoBehaviour
     {
@@ -15,7 +16,7 @@ namespace Gameplay
         public bool IsEmpty { get; private set; } = true;
         public Dictionary<DirectionType, GameFieldGridCell> AdjacentCells { get; private set; }
         public int RowNumber { get; private set; }
-        public int Index { get; private set; }
+        public int LineNumber { get; private set; }
 
         private bool isReady;
 
@@ -23,6 +24,21 @@ namespace Gameplay
         {
             AdjacentCells = new Dictionary<DirectionType, GameFieldGridCell>();
         }
+
+        //private void OnEnable()
+        //{
+        //    CellEmptying += OnCellEmptying;
+        //}
+        //private void OnDisable()
+        //{
+        //    CellEmptying -= OnCellEmptying;
+        //}
+
+        //private void OnCellEmptying(GameFieldGridCell actingCell, CellContentObject contentObject)
+        //{
+        //    if (actingCell.IsEmpty) actingCell.FillCell(ContentObject);
+        //    EmptyCell();
+        //}
 
         /// <summary>
         /// Назначение соседней ячейки
@@ -50,7 +66,7 @@ namespace Gameplay
             ContentObject = contentGObj.GetComponent<CellContentObject>();
             var contentItemIndex = Random.Range(0, contentList.Count);
             ContentObject.SetObjectContent(contentList[contentItemIndex]);
-            ContentObject.SetObjectLocationCell(this);
+            //ContentObject.SetObjectLocationCell(this);
             IsEmpty = false;
         }
 
@@ -61,10 +77,12 @@ namespace Gameplay
         public void FillCell(CellContentObject contentObject)
         {
             ContentObject = contentObject;
-            ContentObject.transform.position = transform.position;
-            ContentObject.DetachObjectLocationCell();
-            ContentObject.SetObjectLocationCell(this);
+            ContentObject.ChangePosition(this);
+            //ContentObject.DetachObjectLocationCell();
+            //ContentObject.SetObjectLocationCell(this);
             IsEmpty = false;
+
+            ContentObject.gameObject.SetActive(true);
         }
 
         public void FillCell(CellContentObject contentObject, List<CellContent> contentList)
@@ -76,29 +94,33 @@ namespace Gameplay
             ContentObject.gameObject.SetActive(true);
         }
 
-        public void EmptyCell(bool isMatch = false)
+        public void EmptyCell()
         {
-            Debug.Log($"Опустошение ячейки [{RowNumber}, {Index}] ({ContentObject.Content.ContentType})");
-            if (isMatch) 
-            {
-                ContentObject.gameObject.SetActive(false);
-                Debug.Log("Объект невидим");
-            } 
+            Debug.Log($"Опустошение ячейки [{RowNumber}, {LineNumber}] ({ContentObject.Content.ContentType})");
+            ContentObject.gameObject.SetActive(false);
+            Debug.Log("Объект невидим");
 
-            ContentObject.DetachObjectLocationCell();
+            //ContentObject.DetachObjectLocationCell();
             var tempObject = ContentObject;
             ContentObject = null;
             IsEmpty = true;
 
             Debug.Log("Ячейка свободна");
-            //CellEmptying?.Invoke(this, tempObject);
-            GameFieldGrid.Instance.OnCellEmptying(this, tempObject);
+
+            StartCoroutine(EmptyingPause());
+            //GameFieldGrid.Instance.OnCellEmptying(this, tempObject);
         }
 
         public void SetIndex(int index, int rowNumber)
         {
             RowNumber = rowNumber;
-            Index = index;
+            LineNumber = index;
+        }
+
+        private IEnumerator EmptyingPause()
+        {
+            yield return new WaitForSeconds(0.3f);
+            GameFieldGrid.Instance.FindPlaceholder(this);
         }
     }
 }

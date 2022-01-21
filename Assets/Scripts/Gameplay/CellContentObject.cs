@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System.Collections;
+using UnityEngine;
 
 namespace Gameplay
 {
@@ -20,23 +21,29 @@ namespace Gameplay
             Debug.Log($"Назначен контент {externalContent.ContentType}");
         }
 
-        public void SetObjectLocationCell(GameFieldGridCell locationCell)
+        public void ChangePosition(GameFieldGridCell cell)
         {
-            if (LocationCell == null) 
-            {
-                LocationCell = locationCell;
-                Debug.Log($"Объект {this.GetHashCode()} {Content.ContentType} привязан к [{locationCell.RowNumber}, {locationCell.Index}");
-            }
+            transform.position = cell.transform.position;
+            LocationCell = cell;
         }
 
-        public void DetachObjectLocationCell()
-        {
-            if (LocationCell != null) 
-            {
-                Debug.Log($"Объект {this.GetHashCode()} {Content.ContentType} отвязан от [{LocationCell.RowNumber}, {LocationCell.Index}]");
+        //public void SetObjectLocationCell(GameFieldGridCell locationCell)
+        //{
+        //    if (LocationCell == null) 
+        //    {
+        //        LocationCell = locationCell;
+        //        Debug.Log($"Объект {this.GetHashCode()} {Content.ContentType} привязан к [{locationCell.RowNumber}, {locationCell.LineNumber}");
+        //    }
+        //}
 
-                LocationCell = null;
-            } 
-        }
+        //public void DetachObjectLocationCell()
+        //{
+        //    if (LocationCell != null) 
+        //    {
+        //        Debug.Log($"Объект {this.GetHashCode()} {Content.ContentType} отвязан от [{LocationCell.RowNumber}, {LocationCell.LineNumber}]");
+
+        //        LocationCell = null;
+        //    } 
+        //}
     }
 }

@@ -6,8 +6,10 @@ namespace Gameplay
 {
     public class GameFieldGrid : Singleton<GameFieldGrid>
     {
-        public Dictionary<int, LinkedList<CellContentObject>> LinkedContentGrid { get; private set; }
+        public Dictionary<int, LinkedList<CellContentObject>> VerticalLinkedContentGrid { get; private set; }
+        public Dictionary<int, LinkedList<CellContentObject>> HorizontalLinkedContentGrid { get; private set; }
 
+        private GameplayController gameplay;
         private const int columnsCount = 5;
         private const int linesCount = 6;
 
@@ -19,53 +21,57 @@ namespace Gameplay
         protected override void Awake()
         {
             base.Awake();
-            LinkedContentGrid = new Dictionary<int, LinkedList<CellContentObject>>();
+            VerticalLinkedContentGrid = new Dictionary<int, LinkedList<CellContentObject>>();
+            HorizontalLinkedContentGrid = new Dictionary<int, LinkedList<CellContentObject>>();
             CreateGrid();
         }
 
-        private void OnEnable()
+        private void Start()
         {
-            GameFieldGridCell.CellEmptying += OnCellEmptying;
+            gameplay = GameplayController.Instance;
         }
 
-        private void OnDisable()
-        {
-            GameFieldGridCell.CellEmptying -= OnCellEmptying;
-        }
+        //private void OnEnable()
+        //{
+        //    GameFieldGridCell.CellEmptying += FindPlaceholder;
+        //}
 
-        public void OnCellEmptying(GameFieldGridCell actingCell, CellContentObject contentObject)
-        {
-            Debug.Log($"Сеть отреагировала на событие в [{actingCell.RowNumber}, {actingCell.Index}]");
-            var rowNumber = actingCell.RowNumber;
-            LinkedContentGrid.TryGetValue(rowNumber, out var row);
+        //private void OnDisable()
+        //{
+        //    GameFieldGridCell.CellEmptying -= FindPlaceholder;
+        //}
 
-            var ar = row.ToArray();
-            Debug.Log($"Предыдущий список ряда ({row.Count}):");
-            foreach (var item in ar)
-            {
-                Debug.Log(item.Content.ContentType);
-            }
+        //public void OnCellEmptying(GameFieldGridCell actingCell, CellContentObject contentObject)
+        //{
+        //    Debug.Log($"Сеть отреагировала на событие в [{actingCell.RowNumber}, {actingCell.LineNumber}]");
+        //    var rowNumber = actingCell.RowNumber;
+        //    VerticalLinkedContentGrid.TryGetValue(rowNumber, out var row);
 
-            var node = row.Find(contentObject);
+        //    var ar = row.ToArray();
+        //    Debug.Log($"Предыдущий список ряда ({row.Count}):");
+        //    foreach (var item in ar)
+        //    {
+        //        Debug.Log(item.Content.ContentType);
+        //    }
 
-            for (int i = actingCell.Index; i < linesCount - 1; i++)
-            {
-                grid[rowNumber, i].FillCell(node.Next.Value);
-            }
-            row.Remove(node);
+        //    var node = row.Find(contentObject);
 
-            grid[rowNumber, linesCount - 1].FillCell(contentObject, lvlContent);
-            row.AddLast(contentObject);
+        //    for (int i = actingCell.LineNumber; i < linesCount - 1; i++)
+        //    {
+        //        grid[rowNumber, i].FillCell(node.Next.Value);
+        //    }
+        //    row.Remove(node);
 
-            Debug.Log($"Текущий список ряда ({row.Count}):");
-            ar = row.ToArray();
-            foreach (var item in ar)
-            {
-                Debug.Log(item.Content.ContentType);
-            }
+        //    grid[rowNumber, linesCount - 1].FillCell(contentObject, lvlContent);
+        //    row.AddLast(contentObject);
 
-
-        }
+        //    Debug.Log($"Текущий список ряда ({row.Count}):");
+        //    ar = row.ToArray();
+        //    foreach (var item in ar)
+        //    {
+        //        Debug.Log(item.Content.ContentType);
+        //    }
+        //}
 
         /// <summary>
         /// Создаёт сетку с пустыми ячейками, добавляет соседние ячейки.
@@ -80,7 +86,7 @@ namespace Gameplay
                 {
                     var cellPosition = new Vector2(transform.position.x + i, transform.position.y + j);
                     grid[i, j] = Instantiate(cell, cellPosition, transform.rotation, transform);
-
+                    grid[i, j].SetIndex(j, i);
 
                     if (i - 1 >= 0)
                     {
@@ -105,66 +111,146 @@ namespace Gameplay
             lvlContent = content;
             for (int i = 0; i < columnsCount; i++)
             {
-                var linkedContentRow = new LinkedList<CellContentObject>();
-                LinkedContentGrid.Add(i, linkedContentRow);
-
                 for (int j = 0; j < linesCount; j++)
                 {
                     var abbreviatedList = new List<CellContent>();
+                    CellContentObject contentObj = null;
+                    if (j - 2 < 0 && i - 2 < 0) contentObj = SpawnManager.Instance.GetContentObject(content, contentObj);
 
                     if (j - 2 >= 0)
                     {
-                        var previousContent = grid[i, j - 2].ContentObject.Content;
-                        if (previousContent.ContentType.Equals(grid[i, j - 1].ContentObject.Content.ContentType))
+                        var previousContent = grid[i, j - 1].ContentObject.Content;
+                        if (previousContent.ContentType == grid[i, j - 2].ContentObject.Content.ContentType)
                         {
                             abbreviatedList.AddRange(content);
                             abbreviatedList.Remove(previousContent);
 
-                            grid[i, j].FillCell(abbreviatedList);
+                            contentObj = SpawnManager.Instance.GetContentObject(abbreviatedList, contentObj);
                         }
-                        else grid[i, j].FillCell(content);
+                        else contentObj = SpawnManager.Instance.GetContentObject(content, contentObj);
                     }
 
                     if (i - 2 >= 0)
                     {
                         var previousContent = grid[i - 2, j].ContentObject.Content;
-                        if (previousContent.ContentType.Equals(grid[i - 1, j].ContentObject.Content.ContentType))
+                        if (previousContent.ContentType == (grid[i - 1, j].ContentObject.Content.ContentType))
                         {
                             if (abbreviatedList.Count == 0) abbreviatedList.AddRange(content);
 
                             abbreviatedList.Remove(previousContent);
-                            grid[i, j].FillCell(abbreviatedList);
+                            contentObj = SpawnManager.Instance.GetContentObject(abbreviatedList, contentObj);
                         }
-                        else if (grid[i, j].IsEmpty) grid[i, j].FillCell(content);
                     }
 
-                    if (j - 2 < 0 && i - 2 < 0) grid[i, j].FillCell(content);
+                    if(contentObj == null) contentObj = SpawnManager.Instance.GetContentObject(content, contentObj);
 
-                    var contentObject = grid[i, j].ContentObject;
-                    if (j == 0)
-                    {
-                        linkedContentRow.AddFirst(contentObject);
-                    }
-                    else linkedContentRow.AddAfter(linkedContentRow.Last, contentObject);
-
-                    grid[i, j].SetIndex(j, i);
+                    grid[i, j].FillCell(contentObj);
                 }
             }
         }
 
-        public Queue<GameFieldGridCell> GetAdjacentCells(GameFieldGridCell cell, DirectionType direction)
+        public void SwitchCellContent(GameFieldGridCell sourceCell, GameFieldGridCell targetCell)
         {
-            var adjacentCells = new Queue<GameFieldGridCell>();
-
-            var currentCell = cell;
-            while (currentCell.AdjacentCells.TryGetValue(direction, out var adjacentCell))
+            if(targetCell.ContentObject == null)
             {
-                adjacentCells.Enqueue(adjacentCell);
-                currentCell = adjacentCell;
+                var obj = sourceCell.ContentObject;
+                grid[sourceCell.RowNumber, sourceCell.LineNumber].EmptyCell();
+                grid[targetCell.RowNumber, targetCell.LineNumber].FillCell(obj);
+
+            }
+            else
+            {
+                var tempContentObj = targetCell.ContentObject;
+                grid[targetCell.RowNumber, targetCell.LineNumber].FillCell(sourceCell.ContentObject);
+                grid[sourceCell.RowNumber, sourceCell.LineNumber].FillCell(tempContentObj);
+            }
+        }
+
+        public GameFieldGridCell FindTargetCell(DirectionType direction, GameFieldGridCell sourceCell)
+        {
+            GameFieldGridCell targetCell = null;
+            switch (direction)
+            {
+                case DirectionType.LEFT:
+                    int offset = sourceCell.RowNumber - 1;
+                    targetCell = grid[offset, sourceCell.LineNumber];
+                    break;
+                case DirectionType.RIGHT:
+                    offset = sourceCell.RowNumber + 1;
+                    targetCell = grid[offset, sourceCell.LineNumber];
+                    break;
+                case DirectionType.TOP:
+                    offset = sourceCell.LineNumber + 1;
+                    targetCell = grid[sourceCell.RowNumber, offset];
+                    break;
+                case DirectionType.DOWN:
+                    offset = sourceCell.LineNumber - 1;
+                    targetCell = grid[sourceCell.RowNumber, offset];
+                    break;
+            }
+            return targetCell;
+        }
+
+        public List<GameFieldGridCell> CheckMatch(GameFieldGridCell cell)
+        {
+            var verticalMatches = new List<GameFieldGridCell>();
+            var horizontalMatches = new List<GameFieldGridCell>();
+
+            for (int i = cell.LineNumber + 1; i < linesCount; i++)
+            {
+                if (grid[cell.RowNumber, i].ContentObject.Content.ContentType != cell.ContentObject.Content.ContentType) break;
+                else verticalMatches.Add(grid[cell.RowNumber, i]);
             }
 
-            return adjacentCells;
+            for (int i = cell.LineNumber - 1; i >= 0; i--)
+            {
+                if (grid[cell.RowNumber, i].ContentObject.Content.ContentType != cell.ContentObject.Content.ContentType) break;
+                else verticalMatches.Add(grid[cell.RowNumber, i]);
+            }
+
+            for (int i = cell.RowNumber - 1 ; i >= 0 ; i--)
+            {
+                if (grid[i, cell.LineNumber].ContentObject.Content.ContentType != cell.ContentObject.Content.ContentType) break;
+                else horizontalMatches.Add(grid[i, cell.LineNumber]);
+            }
+
+            for (int i = cell.RowNumber + 1; i < columnsCount; i++)
+            {
+                if (grid[i, cell.LineNumber].ContentObject.Content.ContentType != cell.ContentObject.Content.ContentType) break;
+                else horizontalMatches.Add(grid[i, cell.LineNumber]);
+            }
+
+            var allMatches = new List<GameFieldGridCell>();
+
+            if (verticalMatches.Count >= 2) allMatches.AddRange(verticalMatches);
+            if (horizontalMatches.Count >= 2) allMatches.AddRange(horizontalMatches);
+
+            allMatches.Add(grid[cell.RowNumber, cell.LineNumber]);
+            return allMatches;
+        }
+
+        public void FindPlaceholder(GameFieldGridCell cell)
+        {
+            GameFieldGridCell filledCell = null;
+            for (int i = cell.LineNumber + 1; i < linesCount; i++)
+            {
+                var currentGrid = grid[cell.RowNumber, i];
+                if (!currentGrid.IsEmpty)
+                {
+                    filledCell = currentGrid;
+                    break;
+                }
+            }
+
+            //if (filledCell == null) 
+            //{
+            //    CellContentObject obj = null;
+            //    obj = SpawnManager.Instance.GetContentObject(lvlContent, obj);
+            //    filledCell = grid[columnsCount - 1, linesCount - 1];
+            //    filledCell.FillCell(obj);
+            //}  
+
+            if(filledCell != null)gameplay.MoveCellContent(filledCell, gameplay.SpawnDirection, false);
         }
     }
-
 }

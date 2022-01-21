@@ -280,6 +280,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1107670823}
   - component: {fileID: 1107670822}
+  - component: {fileID: 1107670824}
   m_Layer: 0
   m_Name: Grid
   m_TagString: Untagged
@@ -314,6 +315,19 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 2
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1107670824
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1107670821}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b665063b522a24c4aa5cdb6d681b6b3a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  contentGameObject: {fileID: 6783057146020181648, guid: 53756ffddd9903340a4396f06a697660, type: 3}
 --- !u!1 &1131319416
 GameObject:
   m_ObjectHideFlags: 0
@@ -728,6 +742,7 @@ MonoBehaviour:
   - {fileID: 11400000, guid: e3b2e275609b4f445ae8ed159502887a, type: 2}
   - {fileID: 11400000, guid: 836a62c7207dc7143817c7a69500dc2e, type: 2}
   - {fileID: 11400000, guid: a08a0d5f724f0ba448a028d829a015b2, type: 2}
+  SpawnDirection: 3
 --- !u!114 &1650479561
 MonoBehaviour:
   m_ObjectHideFlags: 0
