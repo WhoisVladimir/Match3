@@ -100,8 +100,7 @@ namespace Gameplay
             ContentObject.gameObject.SetActive(false);
             Debug.Log("Объект невидим");
 
-            //ContentObject.DetachObjectLocationCell();
-            var tempObject = ContentObject;
+            ContentObject.DetachObjectLocationCell();
             ContentObject = null;
             IsEmpty = true;
 

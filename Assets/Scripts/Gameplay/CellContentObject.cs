@@ -36,14 +36,9 @@ namespace Gameplay
         //    }
         //}
 
-        //public void DetachObjectLocationCell()
-        //{
-        //    if (LocationCell != null) 
-        //    {
-        //        Debug.Log($"Объект {this.GetHashCode()} {Content.ContentType} отвязан от [{LocationCell.RowNumber}, {LocationCell.LineNumber}]");
-
-        //        LocationCell = null;
-        //    } 
-        //}
+        public void DetachObjectLocationCell()
+        {
+            if (LocationCell != null) LocationCell = null;
+        }
     }
 }

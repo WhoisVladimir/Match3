@@ -1,5 +1,5 @@
 ﻿using System.Collections.Generic;
-using System.Linq;
+using System.Collections;
 using UnityEngine;
 
 namespace Gameplay
@@ -79,8 +79,11 @@ namespace Gameplay
                 while (targetCell.IsEmpty)
                 {
                     grid.SwitchCellContent(cell, targetCell);
+                    cell = targetCell;
                     targetCell = grid.FindTargetCell(direction, targetCell);
                 }
+                //var targetMatches = grid.CheckMatch(cell);
+                //MatchesHandling(targetMatches);
             }
         }
 

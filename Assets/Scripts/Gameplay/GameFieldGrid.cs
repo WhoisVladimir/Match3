@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Collections;
 using UnityEngine;
 using System.Linq;
 
@@ -198,6 +199,7 @@ namespace Gameplay
 
             for (int i = cell.LineNumber + 1; i < linesCount; i++)
             {
+                if (grid[cell.RowNumber, i].ContentObject == null);
                 if (grid[cell.RowNumber, i].ContentObject.Content.ContentType != cell.ContentObject.Content.ContentType) break;
                 else verticalMatches.Add(grid[cell.RowNumber, i]);
             }
@@ -242,15 +244,17 @@ namespace Gameplay
                 }
             }
 
-            //if (filledCell == null) 
-            //{
-            //    CellContentObject obj = null;
-            //    obj = SpawnManager.Instance.GetContentObject(lvlContent, obj);
-            //    filledCell = grid[columnsCount - 1, linesCount - 1];
-            //    filledCell.FillCell(obj);
-            //}  
+            if (filledCell == null)
+            {
+                CellContentObject obj = null;
+                obj = SpawnManager.Instance.GetContentObject(lvlContent, obj);
+                filledCell = grid[cell.RowNumber, linesCount - 1];
+                filledCell.FillCell(obj);
+            }
 
-            if(filledCell != null)gameplay.MoveCellContent(filledCell, gameplay.SpawnDirection, false);
+            gameplay.MoveCellContent(filledCell, gameplay.SpawnDirection, false);
         }
+
+
     }
 }
