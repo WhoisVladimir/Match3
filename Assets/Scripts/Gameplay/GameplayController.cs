@@ -4,8 +4,11 @@ using UnityEngine;
 
 namespace Gameplay
 {
+    public delegate void VoidAction();
     public class GameplayController : Singleton<GameplayController>
     {
+        public static VoidAction SwitchSpawnDirection;
+
         [SerializeField] private List<GameLevel> gameLevels;
 
         private GameLevel currentLevel;
@@ -91,7 +94,19 @@ namespace Gameplay
         {
 
             if (matches.Count < 3) return;
-
+            if (matches.Count > 3) 
+            {
+                switch (SpawnDirection)
+                {
+                    case DirectionType.TOP:
+                        SpawnDirection = DirectionType.DOWN;
+                        break;
+                    case DirectionType.DOWN:
+                        SpawnDirection = DirectionType.TOP;
+                        break;
+                }
+                SwitchSpawnDirection?.Invoke();
+            } 
             foreach (var item in matches)
             {
                 item.EmptyCell();

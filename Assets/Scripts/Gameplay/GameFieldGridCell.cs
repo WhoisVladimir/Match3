@@ -4,12 +4,8 @@ using UnityEngine;
 
 namespace Gameplay
 {
-    public delegate void CellAction(GameFieldGridCell actingCell);
-
     public class GameFieldGridCell : MonoBehaviour
     {
-        public static event CellAction CellEmptying;
-
         [SerializeField] private GameObject contentGObj;
 
         public bool IsEmpty { get; private set; } = true;
@@ -54,10 +50,10 @@ namespace Gameplay
             StartCoroutine(EmptyingPause());
         }
 
-        public void SetIndex(int index, int rowNumber)
+        public void SetIndex(int row, int line)
         {
-            RowNumber = rowNumber;
-            LineNumber = index;
+            RowNumber = row;
+            LineNumber = line;
         }
 
         private IEnumerator EmptyingPause()
