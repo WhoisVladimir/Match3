@@ -35,7 +35,6 @@ namespace Gameplay
         /// <returns></returns>
         private GameLevel SetLevel(int index)
         {
-            //реализовать логику завершающую игру
             if (index == boundIndex) return null;
 
             var level = gameLevels.Find(lvl => lvl.LvlIndexNumber == index);
@@ -56,7 +55,6 @@ namespace Gameplay
         /// <param name="isIntentialAction">Является ли перемещение следствием ввода игрока</param>
         public void MoveCellContent(GameFieldGridCell cell, DirectionType direction, bool isIntentialAction)
         {
-            Debug.Log("Обработка движения");
 
             if (isIntentialAction) 
             {
@@ -76,14 +74,16 @@ namespace Gameplay
             {
                 var targetCell = grid.FindTargetCell(direction, cell);
 
-                while (targetCell.IsEmpty)
+                while (targetCell != null && targetCell.IsEmpty == true)
                 {
+                    if (cell.IsEmpty) return;
                     grid.SwitchCellContent(cell, targetCell);
                     cell = targetCell;
                     targetCell = grid.FindTargetCell(direction, targetCell);
+
                 }
-                //var targetMatches = grid.CheckMatch(cell);
-                //MatchesHandling(targetMatches);
+
+                StartCoroutine(grid.HandleAdjacentCells(cell));
             }
         }
 

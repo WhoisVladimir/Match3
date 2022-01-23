@@ -18,7 +18,6 @@ namespace Gameplay
         {
             Content = externalContent;
             spriteRenderer.sprite = Content.Sprite;
-            Debug.Log($"Назначен контент {externalContent.ContentType}");
         }
 
         public void ChangePosition(GameFieldGridCell cell)
@@ -26,15 +25,6 @@ namespace Gameplay
             transform.position = cell.transform.position;
             LocationCell = cell;
         }
-
-        //public void SetObjectLocationCell(GameFieldGridCell locationCell)
-        //{
-        //    if (LocationCell == null) 
-        //    {
-        //        LocationCell = locationCell;
-        //        Debug.Log($"Объект {this.GetHashCode()} {Content.ContentType} привязан к [{locationCell.RowNumber}, {locationCell.LineNumber}");
-        //    }
-        //}
 
         public void DetachObjectLocationCell()
         {

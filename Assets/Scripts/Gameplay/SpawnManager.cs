@@ -15,27 +15,26 @@ namespace Gameplay
             contentObjects = new List<CellContentObject>();
         }
 
-        public CellContentObject GetContentObject(List<CellContent> content, CellContentObject contentObjectReference)
+        public CellContentObject GetContentObject(List<CellContent> content, CellContentObject contentObj = null)
         {
-            if (!contentObjectReference) 
+            if (contentObj == null) 
             {
-                if (contentObjects.Exists(obj => obj.LocationCell == null))
-                    contentObjectReference = contentObjects.Find(obj => obj.LocationCell == null);
+
+                if (contentObjects.Exists(obj => obj.gameObject.activeInHierarchy == false))
+                    contentObj = contentObjects.Find(obj => obj.gameObject.activeInHierarchy == false);
                 else 
                 {
-                    contentObjectReference = Instantiate(contentGameObject).GetComponent<CellContentObject>();
-                    contentObjects.Add(contentObjectReference);
+                    if (contentObjects.Count >= 30) return null;
+
+                    contentObj = Instantiate(contentGameObject).GetComponent<CellContentObject>();
+                    contentObjects.Add(contentObj);
                 }
-            }
-            else
-            {
-                if (!contentObjects.Contains(contentObjectReference)) contentObjects.Add(contentObjectReference);
             }
                         
             var contentItemIndex = Random.Range(0, content.Count);
-            contentObjectReference.SetObjectContent(content[contentItemIndex]);
+            contentObj.SetObjectContent(content[contentItemIndex]);
 
-            return contentObjectReference;
+            return contentObj;
         }
     }
 }

@@ -2,14 +2,12 @@
 using System.Collections;
 using UnityEngine;
 using System.Linq;
+using System;
 
 namespace Gameplay
 {
     public class GameFieldGrid : Singleton<GameFieldGrid>
     {
-        public Dictionary<int, LinkedList<CellContentObject>> VerticalLinkedContentGrid { get; private set; }
-        public Dictionary<int, LinkedList<CellContentObject>> HorizontalLinkedContentGrid { get; private set; }
-
         private GameplayController gameplay;
         private const int columnsCount = 5;
         private const int linesCount = 6;
@@ -22,8 +20,7 @@ namespace Gameplay
         protected override void Awake()
         {
             base.Awake();
-            VerticalLinkedContentGrid = new Dictionary<int, LinkedList<CellContentObject>>();
-            HorizontalLinkedContentGrid = new Dictionary<int, LinkedList<CellContentObject>>();
+
             CreateGrid();
         }
 
@@ -31,48 +28,6 @@ namespace Gameplay
         {
             gameplay = GameplayController.Instance;
         }
-
-        //private void OnEnable()
-        //{
-        //    GameFieldGridCell.CellEmptying += FindPlaceholder;
-        //}
-
-        //private void OnDisable()
-        //{
-        //    GameFieldGridCell.CellEmptying -= FindPlaceholder;
-        //}
-
-        //public void OnCellEmptying(GameFieldGridCell actingCell, CellContentObject contentObject)
-        //{
-        //    Debug.Log($"Сеть отреагировала на событие в [{actingCell.RowNumber}, {actingCell.LineNumber}]");
-        //    var rowNumber = actingCell.RowNumber;
-        //    VerticalLinkedContentGrid.TryGetValue(rowNumber, out var row);
-
-        //    var ar = row.ToArray();
-        //    Debug.Log($"Предыдущий список ряда ({row.Count}):");
-        //    foreach (var item in ar)
-        //    {
-        //        Debug.Log(item.Content.ContentType);
-        //    }
-
-        //    var node = row.Find(contentObject);
-
-        //    for (int i = actingCell.LineNumber; i < linesCount - 1; i++)
-        //    {
-        //        grid[rowNumber, i].FillCell(node.Next.Value);
-        //    }
-        //    row.Remove(node);
-
-        //    grid[rowNumber, linesCount - 1].FillCell(contentObject, lvlContent);
-        //    row.AddLast(contentObject);
-
-        //    Debug.Log($"Текущий список ряда ({row.Count}):");
-        //    ar = row.ToArray();
-        //    foreach (var item in ar)
-        //    {
-        //        Debug.Log(item.Content.ContentType);
-        //    }
-        //}
 
         /// <summary>
         /// Создаёт сетку с пустыми ячейками, добавляет соседние ячейки.
@@ -88,17 +43,6 @@ namespace Gameplay
                     var cellPosition = new Vector2(transform.position.x + i, transform.position.y + j);
                     grid[i, j] = Instantiate(cell, cellPosition, transform.rotation, transform);
                     grid[i, j].SetIndex(j, i);
-
-                    if (i - 1 >= 0)
-                    {
-                        grid[i, j].SetAdjacentCell(DirectionType.LEFT, grid[i - 1, j]);
-                        grid[i - 1, j].SetAdjacentCell(DirectionType.RIGHT, grid[i, j]);
-                    }
-                    if (j - 1 >= 0)
-                    {
-                        grid[i, j].SetAdjacentCell(DirectionType.DOWN, grid[i, j - 1]);
-                        grid[i, j - 1].SetAdjacentCell(DirectionType.TOP, grid[i, j]);
-                    }
                 }
             }
         }
@@ -116,7 +60,7 @@ namespace Gameplay
                 {
                     var abbreviatedList = new List<CellContent>();
                     CellContentObject contentObj = null;
-                    if (j - 2 < 0 && i - 2 < 0) contentObj = SpawnManager.Instance.GetContentObject(content, contentObj);
+                    if (j - 2 < 0 && i - 2 < 0) contentObj = SpawnManager.Instance.GetContentObject(content);
 
                     if (j - 2 >= 0)
                     {
@@ -126,9 +70,9 @@ namespace Gameplay
                             abbreviatedList.AddRange(content);
                             abbreviatedList.Remove(previousContent);
 
-                            contentObj = SpawnManager.Instance.GetContentObject(abbreviatedList, contentObj);
+                            contentObj = SpawnManager.Instance.GetContentObject(abbreviatedList);
                         }
-                        else contentObj = SpawnManager.Instance.GetContentObject(content, contentObj);
+                        else contentObj = SpawnManager.Instance.GetContentObject(content);
                     }
 
                     if (i - 2 >= 0)
@@ -143,9 +87,10 @@ namespace Gameplay
                         }
                     }
 
-                    if(contentObj == null) contentObj = SpawnManager.Instance.GetContentObject(content, contentObj);
+                    if(contentObj == null) contentObj = SpawnManager.Instance.GetContentObject(content);
 
                     grid[i, j].FillCell(contentObj);
+
                 }
             }
         }
@@ -157,7 +102,6 @@ namespace Gameplay
                 var obj = sourceCell.ContentObject;
                 grid[sourceCell.RowNumber, sourceCell.LineNumber].EmptyCell();
                 grid[targetCell.RowNumber, targetCell.LineNumber].FillCell(obj);
-
             }
             else
             {
@@ -174,19 +118,19 @@ namespace Gameplay
             {
                 case DirectionType.LEFT:
                     int offset = sourceCell.RowNumber - 1;
-                    targetCell = grid[offset, sourceCell.LineNumber];
+                    if(offset >= 0) targetCell = grid[offset, sourceCell.LineNumber];
                     break;
                 case DirectionType.RIGHT:
                     offset = sourceCell.RowNumber + 1;
-                    targetCell = grid[offset, sourceCell.LineNumber];
+                    if(offset < columnsCount) targetCell = grid[offset, sourceCell.LineNumber];
                     break;
                 case DirectionType.TOP:
                     offset = sourceCell.LineNumber + 1;
-                    targetCell = grid[sourceCell.RowNumber, offset];
+                    if(offset < linesCount) targetCell = grid[sourceCell.RowNumber, offset];
                     break;
                 case DirectionType.DOWN:
                     offset = sourceCell.LineNumber - 1;
-                    targetCell = grid[sourceCell.RowNumber, offset];
+                    if(offset >= 0) targetCell = grid[sourceCell.RowNumber, offset];
                     break;
             }
             return targetCell;
@@ -199,26 +143,29 @@ namespace Gameplay
 
             for (int i = cell.LineNumber + 1; i < linesCount; i++)
             {
-                if (grid[cell.RowNumber, i].ContentObject == null);
-                if (grid[cell.RowNumber, i].ContentObject.Content.ContentType != cell.ContentObject.Content.ContentType) break;
+                if (grid[cell.RowNumber, i].ContentObject == null) break;
+                else if (grid[cell.RowNumber, i].ContentObject.Content.ContentType != cell.ContentObject.Content.ContentType) break;
                 else verticalMatches.Add(grid[cell.RowNumber, i]);
             }
 
             for (int i = cell.LineNumber - 1; i >= 0; i--)
             {
-                if (grid[cell.RowNumber, i].ContentObject.Content.ContentType != cell.ContentObject.Content.ContentType) break;
+                if (grid[cell.RowNumber, i].ContentObject == null) break;
+                else if (grid[cell.RowNumber, i].ContentObject.Content.ContentType != cell.ContentObject.Content.ContentType) break;
                 else verticalMatches.Add(grid[cell.RowNumber, i]);
             }
 
             for (int i = cell.RowNumber - 1 ; i >= 0 ; i--)
             {
-                if (grid[i, cell.LineNumber].ContentObject.Content.ContentType != cell.ContentObject.Content.ContentType) break;
+                if (grid[i, cell.LineNumber].ContentObject == null) break;
+                else if (grid[i, cell.LineNumber].ContentObject.Content.ContentType != cell.ContentObject.Content.ContentType) break;
                 else horizontalMatches.Add(grid[i, cell.LineNumber]);
             }
 
             for (int i = cell.RowNumber + 1; i < columnsCount; i++)
             {
-                if (grid[i, cell.LineNumber].ContentObject.Content.ContentType != cell.ContentObject.Content.ContentType) break;
+                if (grid[i, cell.LineNumber].ContentObject == null) break;
+                else if (grid[i, cell.LineNumber].ContentObject.Content.ContentType != cell.ContentObject.Content.ContentType) break;
                 else horizontalMatches.Add(grid[i, cell.LineNumber]);
             }
 
@@ -231,13 +178,19 @@ namespace Gameplay
             return allMatches;
         }
 
-        public void FindPlaceholder(GameFieldGridCell cell)
+        public void OnCellEmptying(GameFieldGridCell actingCell)
         {
+            StartCoroutine(FindPlaceholder(actingCell));
+        }
+
+        public IEnumerator FindPlaceholder(GameFieldGridCell cell)
+        {
+            
             GameFieldGridCell filledCell = null;
             for (int i = cell.LineNumber + 1; i < linesCount; i++)
             {
                 var currentGrid = grid[cell.RowNumber, i];
-                if (!currentGrid.IsEmpty)
+                if (currentGrid.IsEmpty == false)
                 {
                     filledCell = currentGrid;
                     break;
@@ -246,15 +199,39 @@ namespace Gameplay
 
             if (filledCell == null)
             {
+                yield return new WaitForEndOfFrame();
                 CellContentObject obj = null;
-                obj = SpawnManager.Instance.GetContentObject(lvlContent, obj);
+                obj = SpawnManager.Instance.GetContentObject(lvlContent);
                 filledCell = grid[cell.RowNumber, linesCount - 1];
-                filledCell.FillCell(obj);
+                if(grid[cell.RowNumber, linesCount -1].IsEmpty) filledCell.FillCell(obj);
             }
 
             gameplay.MoveCellContent(filledCell, gameplay.SpawnDirection, false);
+
+            yield return null;
         }
 
-
+        public IEnumerator HandleAdjacentCells(GameFieldGridCell sourceCell)
+        {
+            var adjacentCells = new List<GameFieldGridCell>();
+            foreach (var item in Enum.GetValues(typeof(DirectionType)))
+            {
+                var direction = (DirectionType)item;
+                var adjCell = FindTargetCell(direction, sourceCell);
+                if (adjCell != null) adjacentCells.Add(adjCell);
+            }
+            foreach (var item in adjacentCells)
+            {
+                if (item.IsEmpty)
+                {
+                    yield return new WaitWhile(() => item.IsEmpty == true);
+                }
+            }
+            if (!sourceCell.IsEmpty)
+            {
+                var matchCells = CheckMatch(sourceCell);
+                gameplay.MatchesHandling(matchCells);
+            }
+        }
     }
 }
