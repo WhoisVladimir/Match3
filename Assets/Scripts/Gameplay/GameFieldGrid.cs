@@ -1,32 +1,33 @@
 ﻿using System.Collections.Generic;
 using System.Collections;
 using UnityEngine;
-using System.Linq;
 using System;
 
 namespace Gameplay
 {
     public class GameFieldGrid : Singleton<GameFieldGrid>
     {
+        [SerializeField] private GameFieldGridCell cell;
+
         private GameplayController gameplay;
+        private SpawnManager spawner;
+       
         private const int columnsCount = 5;
         private const int linesCount = 6;
-
         private GameFieldGridCell[,] grid;
-        private List<CellContent> lvlContent;
 
-        [SerializeField] private GameFieldGridCell cell;
+        private List<CellContent> lvlContent;
 
         protected override void Awake()
         {
             base.Awake();
-
             CreateGrid();
         }
 
         private void Start()
         {
             gameplay = GameplayController.Instance;
+            spawner = SpawnManager.Instance;
         }
 
         private void OnEnable()
@@ -58,9 +59,9 @@ namespace Gameplay
         }
 
         /// <summary>
-        /// Логика заполнения сетки. Производится проверка предыдущих ячеек на совпадение содержимого.
+        /// Логика заполнения сетки контентом. Производится проверка предыдущих ячеек на совпадение содержимого.
         /// </summary>
-        /// <param name="content">Список возможного содержимого (перенести в более адекватное место)</param>
+        /// <param name="content">Список возможного содержимого.</param>
         public void FillGrid(List<CellContent> content)
         {
             lvlContent = content;
@@ -70,7 +71,7 @@ namespace Gameplay
                 {
                     var abbreviatedList = new List<CellContent>();
                     CellContentObject contentObj = null;
-                    if (j - 2 < 0 && i - 2 < 0) contentObj = SpawnManager.Instance.GetContentObject(content);
+                    if (j - 2 < 0 && i - 2 < 0) contentObj = spawner.GetContentObject(content);
 
                     if (j - 2 >= 0)
                     {
@@ -80,9 +81,9 @@ namespace Gameplay
                             abbreviatedList.AddRange(content);
                             abbreviatedList.Remove(previousContent);
 
-                            contentObj = SpawnManager.Instance.GetContentObject(abbreviatedList);
+                            contentObj = spawner.GetContentObject(abbreviatedList);
                         }
-                        else contentObj = SpawnManager.Instance.GetContentObject(content);
+                        else contentObj = spawner.GetContentObject(content);
                     }
 
                     if (i - 2 >= 0)
@@ -93,17 +94,22 @@ namespace Gameplay
                             if (abbreviatedList.Count == 0) abbreviatedList.AddRange(content);
 
                             abbreviatedList.Remove(previousContent);
-                            contentObj = SpawnManager.Instance.GetContentObject(abbreviatedList, contentObj);
+                            contentObj = spawner.GetContentObject(abbreviatedList, contentObj);
                         }
                     }
 
-                    if(contentObj == null) contentObj = SpawnManager.Instance.GetContentObject(content);
+                    if(contentObj == null) contentObj = spawner.GetContentObject(content);
 
                     grid[i, j].FillCell(contentObj);
                 }
             }
         }
 
+        /// <summary>
+        /// Перемещает объект из заполненной ячейки в пустую, а также меняет объекты местами.
+        /// </summary>
+        /// <param name="sourceCell">Ячейка-источник движения</param>
+        /// <param name="targetCell">Ячейка по направлению движения.</param>
         public void SwitchCellContent(GameFieldGridCell sourceCell, GameFieldGridCell targetCell)
         {
             if(targetCell.ContentObject == null)
@@ -120,6 +126,12 @@ namespace Gameplay
             }
         }
 
+        /// <summary>
+        /// Ищет ячейку в заданном направлении.
+        /// </summary>
+        /// <param name="direction">Направление движения.</param>
+        /// <param name="sourceCell">Ячейка-источник движения.</param>
+        /// <returns></returns>
         public GameFieldGridCell FindTargetCell(DirectionType direction, GameFieldGridCell sourceCell)
         {
             GameFieldGridCell targetCell = null;
@@ -145,6 +157,11 @@ namespace Gameplay
             return targetCell;
         }
 
+        /// <summary>
+        /// Производит проверку контента соседних ячеек.
+        /// </summary>
+        /// <param name="cell">Ячейка-источник.</param>
+        /// <returns></returns>
         public List<GameFieldGridCell> CheckMatch(GameFieldGridCell cell)
         {
             var verticalMatches = new List<GameFieldGridCell>();
@@ -189,14 +206,22 @@ namespace Gameplay
             return allMatches;
         }
 
+        /// <summary>
+        /// Запускает сопрограмму поиска занятых ячеек.
+        /// </summary>
+        /// <param name="actingCell">Ячейка-источник уведомления.</param>
         public void OnCellEmptying(GameFieldGridCell actingCell)
         {
             StartCoroutine(FindPlaceholder(actingCell));
         }
 
+        /// <summary>
+        /// Сопрограмма поиска контента для заполнения опустевшей ячейки.
+        /// </summary>
+        /// <param name="cell">Ячейка-источник уведомления.</param>
+        /// <returns></returns>
         public IEnumerator FindPlaceholder(GameFieldGridCell cell)
         {
-            Debug.Log($"Запрос от ячейки [{cell.RowNumber}, {cell.LineNumber}");
             GameFieldGridCell filledCell = null;
 
             int bound = 0;
@@ -214,8 +239,6 @@ namespace Gameplay
             for (i = cell.LineNumber + 1; i < bound ; i++)
             {
                 var currentGrid = grid[cell.RowNumber, Math.Abs(i)];
-                Debug.Log($"Проверка заполнителя: [{currentGrid.RowNumber}, {currentGrid.LineNumber}]");
-                Debug.Log(i.ToString());
                 if (currentGrid.IsEmpty == false)
                 {
                     filledCell = currentGrid;
@@ -236,6 +259,11 @@ namespace Gameplay
             yield return null;
         }
 
+        /// <summary>
+        /// Сопрограмма ожидания заполнения соседних ячеек для последующей проверки на совпадение контента.
+        /// </summary>
+        /// <param name="sourceCell">Ячейка-источник.</param>
+        /// <returns></returns>
         public IEnumerator HandleAdjacentCells(GameFieldGridCell sourceCell)
         {
             var adjacentCells = new List<GameFieldGridCell>();
@@ -259,6 +287,9 @@ namespace Gameplay
             }
         }
 
+        /// <summary>
+        /// Реакция на смену направления спавна. "Разворачивает" внутреннюю нумерацию ячеек.
+        /// </summary>
         public void OnSpawnDirectionSwitch()
         {
             for (int i = 0; i < columnsCount; i++)
@@ -267,7 +298,6 @@ namespace Gameplay
                 {
                     var cell = grid[i, j];
                     cell.SetIndex(i, cell.LineNumber * -1);
-                    Debug.Log(cell.LineNumber);
                 }
             }
         }

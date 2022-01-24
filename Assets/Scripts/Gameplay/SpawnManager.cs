@@ -15,6 +15,12 @@ namespace Gameplay
             contentObjects = new List<CellContentObject>();
         }
 
+        /// <summary>
+        /// Возвращает заполненный или создаёт новый объект контента.
+        /// </summary>
+        /// <param name="content">Список контента.</param>
+        /// <param name="contentObj">Имеющийся в наличии объект для заполнения.</param>
+        /// <returns>Объект контента</returns>
         public CellContentObject GetContentObject(List<CellContent> content, CellContentObject contentObj = null)
         {
             if (contentObj == null) 

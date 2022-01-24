@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using System.Collections;
 using UnityEngine;
 
 namespace Gameplay
@@ -30,11 +29,11 @@ namespace Gameplay
 
         private void OnEnable()
         {
-            GameFieldGridCell.SwitchSpawnDirection += OnSwitchNotifikation;
+            GameFieldGridCell.SwitchSpawnDirection += OnSwitchNotifiсation;
         }
         private void OnDisable()
         {
-            GameFieldGridCell.SwitchSpawnDirection -= OnSwitchNotifikation;
+            GameFieldGridCell.SwitchSpawnDirection -= OnSwitchNotifiсation;
         }
 
         /// <summary>
@@ -95,6 +94,10 @@ namespace Gameplay
             }
         }
 
+        /// <summary>
+        /// Обрабатывает найденные совпадения.
+        /// </summary>
+        /// <param name="matches">Список совпадений.</param>
         public void MatchesHandling(List<GameFieldGridCell> matches)
         {
             if (matches.Count < 3) return;
@@ -103,7 +106,6 @@ namespace Gameplay
                 var unspecCell = matches.Find(cell => !cell.ContentObject.IsSpecial);
                 unspecCell.ContentObject.SetSpecial();
                 matches.Remove(unspecCell);
-
             } 
             foreach (var item in matches)
             {
@@ -111,7 +113,10 @@ namespace Gameplay
             }
         }
 
-        private void OnSwitchNotifikation()
+        /// <summary>
+        /// Меняет направление спавна.
+        /// </summary>
+        private void OnSwitchNotifiсation()
         {
             switch (SpawnDirection)
             {

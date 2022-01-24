@@ -17,7 +17,7 @@ namespace Gameplay
         }
 
         /// <summary>
-        /// Определяет направление перемещения указателя после нажатия.
+        /// Определяет направление перемещения указателя после нажатия. Используется новая система ввода.
         /// </summary>
         /// <param name="context"></param>
         public void TapCellContent(InputAction.CallbackContext context)
@@ -41,7 +41,6 @@ namespace Gameplay
             }
             if (context.phase == InputActionPhase.Canceled || context.phase == InputActionPhase.Performed)
             {
-                Debug.Log(context.phase);
                 if (targetObj == null) return;
                 var cell = targetObj.gameObject.GetComponent<GameFieldGridCell>();
 

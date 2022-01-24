@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Collections;
+﻿using System.Collections;
 using UnityEngine;
 
 namespace Gameplay
@@ -23,9 +22,9 @@ namespace Gameplay
         private bool isReady;
 
         /// <summary>
-        /// Заполнение ячейки конкретном контентом
+        /// Заполнение ячейки конкретном контентом.
         /// </summary>
-        /// <param name="contentObject">Объект содержимого ячейки</param>
+        /// <param name="contentObject">Объект содержимого ячейки.</param>
         public void FillCell(CellContentObject contentObject)
         {
             ContentObject = contentObject;
@@ -37,17 +36,15 @@ namespace Gameplay
             }
 
             ContentObject.gameObject.SetActive(true);
-            Debug.Log($"Заполнение ячейки [{RowNumber}, {LineNumber}] ({ContentObject.Content.ContentType} " +
-                $"{ContentObject.gameObject.GetHashCode()})");
         }
 
+        /// <summary>
+        /// Опустошает ячейку.
+        /// </summary>
         public void EmptyCell()
         {
             if (IsEmpty) return;
-
-            Debug.Log($"Опустошение ячейки [{RowNumber}, {LineNumber}] ({ContentObject.Content.ContentType} " +
-                $"{ContentObject.gameObject.GetHashCode()})");
-            
+          
             if (ContentObject.IsSpecial) SwitchSpawnDirection?.Invoke();
 
             ContentObject.gameObject.SetActive(false);
@@ -59,12 +56,21 @@ namespace Gameplay
             StartCoroutine(EmptyingPause());
         }
 
+        /// <summary>
+        /// Назначает внутренний номер столбца и строки.
+        /// </summary>
+        /// <param name="row">Столбец.</param>
+        /// <param name="line">Линия.</param>
         public void SetIndex(int row, int line)
         {
             RowNumber = row;
             LineNumber = line;
         }
 
+        /// <summary>
+        /// Пауза.
+        /// </summary>
+        /// <returns></returns>
         private IEnumerator EmptyingPause()
         {
             yield return new WaitForSeconds(0.3f);
