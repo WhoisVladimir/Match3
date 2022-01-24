@@ -4,11 +4,8 @@ using UnityEngine;
 
 namespace Gameplay
 {
-    public delegate void VoidAction();
     public class GameplayController : Singleton<GameplayController>
     {
-        public static VoidAction SwitchSpawnDirection;
-
         [SerializeField] private List<GameLevel> gameLevels;
 
         private GameLevel currentLevel;
@@ -29,6 +26,15 @@ namespace Gameplay
             lvlContentItems = currentLevel.ContentItems;
             grid = GameFieldGrid.Instance;
             grid.FillGrid(lvlContentItems);
+        }
+
+        private void OnEnable()
+        {
+            GameFieldGridCell.SwitchSpawnDirection += OnSwitchNotifikation;
+        }
+        private void OnDisable()
+        {
+            GameFieldGridCell.SwitchSpawnDirection -= OnSwitchNotifikation;
         }
 
         /// <summary>
@@ -83,7 +89,6 @@ namespace Gameplay
                     grid.SwitchCellContent(cell, targetCell);
                     cell = targetCell;
                     targetCell = grid.FindTargetCell(direction, targetCell);
-
                 }
 
                 StartCoroutine(grid.HandleAdjacentCells(cell));
@@ -92,24 +97,30 @@ namespace Gameplay
 
         public void MatchesHandling(List<GameFieldGridCell> matches)
         {
-
             if (matches.Count < 3) return;
             if (matches.Count > 3) 
             {
-                switch (SpawnDirection)
-                {
-                    case DirectionType.TOP:
-                        SpawnDirection = DirectionType.DOWN;
-                        break;
-                    case DirectionType.DOWN:
-                        SpawnDirection = DirectionType.TOP;
-                        break;
-                }
-                SwitchSpawnDirection?.Invoke();
+                var unspecCell = matches.Find(cell => !cell.ContentObject.IsSpecial);
+                unspecCell.ContentObject.SetSpecial();
+                matches.Remove(unspecCell);
+
             } 
             foreach (var item in matches)
             {
                 item.EmptyCell();
+            }
+        }
+
+        private void OnSwitchNotifikation()
+        {
+            switch (SpawnDirection)
+            {
+                case DirectionType.TOP:
+                    SpawnDirection = DirectionType.DOWN;
+                    break;
+                case DirectionType.DOWN:
+                    SpawnDirection = DirectionType.TOP;
+                    break;
             }
         }
     }

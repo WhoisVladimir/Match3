@@ -4,8 +4,13 @@ using UnityEngine;
 
 namespace Gameplay
 {
+    public delegate void VoidAction();
+
     public class GameFieldGridCell : MonoBehaviour
     {
+        public static VoidAction SwitchSpawnDirection;
+
+
         [SerializeField] private GameObject contentGObj;
 
         public bool IsEmpty { get; private set; } = true;
@@ -32,15 +37,19 @@ namespace Gameplay
             }
 
             ContentObject.gameObject.SetActive(true);
-            Debug.Log($"Заполнение ячейки [{RowNumber}, {LineNumber}] ({ContentObject.Content.ContentType} {ContentObject.gameObject.GetHashCode()})");
-
+            Debug.Log($"Заполнение ячейки [{RowNumber}, {LineNumber}] ({ContentObject.Content.ContentType} " +
+                $"{ContentObject.gameObject.GetHashCode()})");
         }
 
         public void EmptyCell()
         {
             if (IsEmpty) return;
 
-            Debug.Log($"Опустошение ячейки [{RowNumber}, {LineNumber}] ({ContentObject.Content.ContentType} {ContentObject.gameObject.GetHashCode()})");
+            Debug.Log($"Опустошение ячейки [{RowNumber}, {LineNumber}] ({ContentObject.Content.ContentType} " +
+                $"{ContentObject.gameObject.GetHashCode()})");
+            
+            if (ContentObject.IsSpecial) SwitchSpawnDirection?.Invoke();
+
             ContentObject.gameObject.SetActive(false);
 
             ContentObject.DetachObjectLocationCell();

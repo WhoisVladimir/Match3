@@ -31,12 +31,12 @@ namespace Gameplay
 
         private void OnEnable()
         {
-            GameplayController.SwitchSpawnDirection += OnSpawnDirectionSwitch;
+            GameFieldGridCell.SwitchSpawnDirection += OnSpawnDirectionSwitch;
         }
 
         private void OnDisable()
         {
-            GameplayController.SwitchSpawnDirection -= OnSpawnDirectionSwitch;
+            GameFieldGridCell.SwitchSpawnDirection -= OnSpawnDirectionSwitch;
         }
 
         /// <summary>
@@ -100,7 +100,6 @@ namespace Gameplay
                     if(contentObj == null) contentObj = SpawnManager.Instance.GetContentObject(content);
 
                     grid[i, j].FillCell(contentObj);
-
                 }
             }
         }
@@ -192,7 +191,6 @@ namespace Gameplay
 
         public void OnCellEmptying(GameFieldGridCell actingCell)
         {
-            
             StartCoroutine(FindPlaceholder(actingCell));
         }
 
