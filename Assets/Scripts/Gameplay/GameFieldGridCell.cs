@@ -1,16 +1,14 @@
 ﻿using System.Collections;
 using UnityEngine;
+using Utils;
 
 namespace Gameplay
 {
-    public delegate void VoidAction();
 
     public class GameFieldGridCell : MonoBehaviour
     {
-        public static VoidAction SwitchSpawnDirection;
-
-
         [SerializeField] private GameObject contentGObj;
+
 
         public bool IsEmpty { get; private set; } = true;
 
@@ -19,7 +17,15 @@ namespace Gameplay
         public int RowNumber { get; private set; }
         public int LineNumber { get; private set; }
 
-        private bool isReady;
+        public bool IsReady { get; private set; }
+
+        public void SetStartContent(CellContentObject contentObject)
+        {
+            ContentObject = contentObject;
+            var positionCommand = new SetStartPostionCommand(contentObject, this);
+            Invoker.AddCommand(positionCommand);
+            IsEmpty = false;
+        }
 
         /// <summary>
         /// Заполнение ячейки конкретном контентом.
@@ -27,15 +33,9 @@ namespace Gameplay
         /// <param name="contentObject">Объект содержимого ячейки.</param>
         public void FillCell(CellContentObject contentObject)
         {
+            contentObject.ChangePosition(this);
             ContentObject = contentObject;
-            ContentObject.ChangePosition(this);
             IsEmpty = false;
-            if(isReady == false)
-            {
-                isReady = true;
-            }
-
-            ContentObject.gameObject.SetActive(true);
         }
 
         /// <summary>
@@ -45,7 +45,7 @@ namespace Gameplay
         {
             if (IsEmpty) return;
           
-            if (ContentObject.IsSpecial) SwitchSpawnDirection?.Invoke();
+            //if (ContentObject.IsSpecial) SwitchSpawnDirection?.Invoke();
 
             ContentObject.gameObject.SetActive(false);
 
@@ -53,7 +53,7 @@ namespace Gameplay
             ContentObject = null;
             IsEmpty = true;
 
-            StartCoroutine(EmptyingPause());
+            //StartCoroutine(EmptyingPause());
         }
 
         /// <summary>
@@ -74,7 +74,14 @@ namespace Gameplay
         private IEnumerator EmptyingPause()
         {
             yield return new WaitForSeconds(0.3f);
-            GameFieldGrid.Instance.OnCellEmptying(this);
+            //if (IsEmpty) GameFieldGrid.Instance.OnCellEmptying(this);
         }
+
+        public void NotificateAboutFilling()
+        {
+            IsEmpty = false;
+            Debug.Log("Notification about filling;");
+        }
+
     }
 }

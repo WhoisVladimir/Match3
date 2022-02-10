@@ -2,11 +2,14 @@
 using System.Collections;
 using UnityEngine;
 using System;
+using Utils;
 
 namespace Gameplay
 {
     public class GameFieldGrid : Singleton<GameFieldGrid>
     {
+        public int EmptyCellsCount { get; private set; } = 0;
+
         [SerializeField] private GameFieldGridCell cell;
 
         private GameplayController gameplay;
@@ -21,6 +24,7 @@ namespace Gameplay
         protected override void Awake()
         {
             base.Awake();
+
             CreateGrid();
         }
 
@@ -30,15 +34,6 @@ namespace Gameplay
             spawner = SpawnManager.Instance;
         }
 
-        private void OnEnable()
-        {
-            GameFieldGridCell.SwitchSpawnDirection += OnSpawnDirectionSwitch;
-        }
-
-        private void OnDisable()
-        {
-            GameFieldGridCell.SwitchSpawnDirection -= OnSpawnDirectionSwitch;
-        }
 
         /// <summary>
         /// Создаёт сетку с пустыми ячейками, добавляет соседние ячейки.
@@ -100,7 +95,9 @@ namespace Gameplay
 
                     if(contentObj == null) contentObj = spawner.GetContentObject(content);
 
-                    grid[i, j].FillCell(contentObj);
+                    var startContentCommand = new SetStartContentCommand(grid[i, j], contentObj);
+                    if (i == columnsCount - 1 && j == linesCount - 1) Invoker.AddEndedCommand(startContentCommand);
+                    else Invoker.AddCommand(startContentCommand);
                 }
             }
         }
@@ -115,14 +112,19 @@ namespace Gameplay
             if(targetCell.ContentObject == null)
             {
                 var obj = sourceCell.ContentObject;
-                grid[sourceCell.RowNumber, Math.Abs(sourceCell.LineNumber)].EmptyCell();
-                grid[targetCell.RowNumber, Math.Abs(targetCell.LineNumber)].FillCell(obj);
+                //grid[sourceCell.RowNumber, Math.Abs(sourceCell.LineNumber)].EmptyCell();
+                var fillCell = new FillCellCommand(targetCell, sourceCell.ContentObject);
+                Invoker.AddCommand(fillCell);
             }
             else
             {
+                Debug.Log("Cмена ячеек");
                 var tempContentObj = targetCell.ContentObject;
-                grid[targetCell.RowNumber, Math.Abs(targetCell.LineNumber)].FillCell(sourceCell.ContentObject);
-                grid[sourceCell.RowNumber, Math.Abs(sourceCell.LineNumber)].FillCell(tempContentObj);
+                var fillCell = new FillCellCommand(grid[targetCell.RowNumber, Math.Abs(targetCell.LineNumber)], sourceCell.ContentObject);
+                var secondFillCell = new FillCellCommand(grid[sourceCell.RowNumber, Math.Abs(sourceCell.LineNumber)], tempContentObj);
+
+                Invoker.AddCommand(fillCell);
+                Invoker.AddCommand(secondFillCell);
             }
         }
 
@@ -206,58 +208,6 @@ namespace Gameplay
             return allMatches;
         }
 
-        /// <summary>
-        /// Запускает сопрограмму поиска занятых ячеек.
-        /// </summary>
-        /// <param name="actingCell">Ячейка-источник уведомления.</param>
-        public void OnCellEmptying(GameFieldGridCell actingCell)
-        {
-            StartCoroutine(FindPlaceholder(actingCell));
-        }
-
-        /// <summary>
-        /// Сопрограмма поиска контента для заполнения опустевшей ячейки.
-        /// </summary>
-        /// <param name="cell">Ячейка-источник уведомления.</param>
-        /// <returns></returns>
-        public IEnumerator FindPlaceholder(GameFieldGridCell cell)
-        {
-            GameFieldGridCell filledCell = null;
-
-            int bound = 0;
-            switch (gameplay.SpawnDirection)
-            {
-                case DirectionType.TOP:
-                    bound = 1;
-                    break;
-                case DirectionType.DOWN:
-                    bound = linesCount;
-                    break;
-            }
-
-            int i;
-            for (i = cell.LineNumber + 1; i < bound ; i++)
-            {
-                var currentGrid = grid[cell.RowNumber, Math.Abs(i)];
-                if (currentGrid.IsEmpty == false)
-                {
-                    filledCell = currentGrid;
-                    break;
-                }
-            }
-
-            if (filledCell == null)
-            {
-                yield return new WaitForEndOfFrame();
-                var obj = SpawnManager.Instance.GetContentObject(lvlContent);
-                filledCell = grid[cell.RowNumber, i - 1];
-                if(grid[cell.RowNumber, i - 1].IsEmpty) filledCell.FillCell(obj);
-            }
-
-            gameplay.MoveCellContent(filledCell, gameplay.SpawnDirection, false);
-
-            yield return null;
-        }
 
         /// <summary>
         /// Сопрограмма ожидания заполнения соседних ячеек для последующей проверки на совпадение контента.
@@ -280,26 +230,93 @@ namespace Gameplay
                     yield return new WaitWhile(() => item.IsEmpty == true);
                 }
             }
-            if (!sourceCell.IsEmpty)
-            {
-                var matchCells = CheckMatch(sourceCell);
-                gameplay.MatchesHandling(matchCells);
-            }
+            //if (!sourceCell.IsEmpty)
+            //{
+            //    var matchCells = CheckMatch(sourceCell);
+            //    gameplay.MatchesHandling(matchCells);
+            //}
         }
 
-        /// <summary>
-        /// Реакция на смену направления спавна. "Разворачивает" внутреннюю нумерацию ячеек.
-        /// </summary>
-        public void OnSpawnDirectionSwitch()
+        public void MoveCells(GameFieldGridCell initCell, int stepsCount)
         {
-            for (int i = 0; i < columnsCount; i++)
+            int bound = GetGridBound();
+
+            var filledCells = new LinkedList<GameFieldGridCell>();
+            for (int i = initCell.LineNumber + 1; i < bound; i++)
             {
-                for (int j = 0; j < linesCount; j++)
+                var currentGrid = grid[initCell.RowNumber, Math.Abs(i)];
+
+                if (!currentGrid.IsEmpty)
                 {
-                    var cell = grid[i, j];
-                    cell.SetIndex(i, cell.LineNumber * -1);
+                    filledCells.AddLast(currentGrid);
                 }
             }
+
+            var respawnerCell = grid[initCell.RowNumber, bound - 1];
+
+            if (filledCells.Count == 0)
+            {
+                Respawn(respawnerCell);
+                filledCells.AddLast(respawnerCell);
+                stepsCount--;
+                if (initCell == respawnerCell) return;
+            }
+
+            var refillCommand = new FillRowCommand(filledCells, respawnerCell, initCell, stepsCount);
+            Invoker.AddCommand(refillCommand);
+
+            //for (int i = 0; i < stepsCount; i++)
+            //{
+            //    var refillCommand = new FillRowCommand(filledCells, respawnerCell);
+            //    Invoker.AddCommand(refillCommand);
+            //}
+        }
+
+        public void Respawn(GameFieldGridCell respawnerCell)
+        {
+            var contentObj = spawner.GetContentObject(lvlContent);
+            var respawnCommand = new SetStartContentCommand(respawnerCell, contentObj);
+            Invoker.AddCommand(respawnCommand);
+            EmptyCellsCount--;
+            Debug.Log($"{EmptyCellsCount} пустых ячеек.");
+            if (EmptyCellsCount == 0) Debug.Log("Сетка заполнена!");
+        }
+
+        public GameFieldGridCell GetNextCell(GameFieldGridCell currentCell)
+        {
+            int bound = GetGridBound();
+            if (currentCell.LineNumber == bound - linesCount ) return null;
+
+            var nextCell = grid[currentCell.RowNumber, currentCell.LineNumber - 1];
+            return nextCell;
+        }
+        public GameFieldGridCell GetPreviousCell(GameFieldGridCell currentCell)
+        {
+            int bound = GetGridBound();
+            if (currentCell.LineNumber == bound) return null;
+
+            var prevCell = grid[currentCell.RowNumber, currentCell.LineNumber + 1];
+            return prevCell;
+        }
+
+        private int GetGridBound()
+        {
+            int bound = 0;
+            switch (gameplay.SpawnDirection)
+            {
+                case DirectionType.TOP:
+                    bound = 1;
+                    break;
+                case DirectionType.DOWN:
+                    bound = linesCount;
+                    break;
+            }
+            return bound;
+        }
+
+        public void AddEmptyCells(int count)
+        {
+            EmptyCellsCount += count;
         }
     }
 }

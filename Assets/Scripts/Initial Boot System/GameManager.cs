@@ -1,4 +1,6 @@
-﻿namespace InitBootSystem
+﻿using Utils;
+
+namespace InitBootSystem
 {
     public class GameManager : Singleton<GameManager>
     {

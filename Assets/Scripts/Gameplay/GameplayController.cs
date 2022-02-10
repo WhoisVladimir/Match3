@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using UnityEngine;
+using Utils;
 
 namespace Gameplay
 {
@@ -23,18 +24,20 @@ namespace Gameplay
         private void Start()
         {
             lvlContentItems = currentLevel.ContentItems;
+
             grid = GameFieldGrid.Instance;
-            grid.FillGrid(lvlContentItems);
+            var fillCommand = new FillGridCommand(lvlContentItems);
+            Invoker.StartCommand(fillCommand);
         }
 
-        private void OnEnable()
-        {
-            GameFieldGridCell.SwitchSpawnDirection += OnSwitchNotifiсation;
-        }
-        private void OnDisable()
-        {
-            GameFieldGridCell.SwitchSpawnDirection -= OnSwitchNotifiсation;
-        }
+        //private void OnEnable()
+        //{
+        //    GameFieldGridCell.SwitchSpawnDirection += OnSwitchNotifiсation;
+        //}
+        //private void OnDisable()
+        //{
+        //    GameFieldGridCell.SwitchSpawnDirection -= OnSwitchNotifiсation;
+        //}
 
         /// <summary>
         /// Назначает уровень.
@@ -66,17 +69,8 @@ namespace Gameplay
 
             if (isIntentialAction) 
             {
-                var targetCell = grid.FindTargetCell(direction, cell);
-                grid.SwitchCellContent(cell, targetCell);
-                var targetMatches = grid.CheckMatch(targetCell);
-                var sourceMatches = grid.CheckMatch(cell);
-
-                if (targetMatches.Count < 3 && sourceMatches.Count < 3) grid.SwitchCellContent(targetCell, cell);
-                else
-                {
-                    MatchesHandling(targetMatches);
-                    MatchesHandling(sourceMatches);
-                }
+                var findSwitchCommand = new FindCellToMoveCommand(direction, cell);
+                Invoker.AddCommand(findSwitchCommand);
             }
             else
             {
@@ -94,23 +88,46 @@ namespace Gameplay
             }
         }
 
+        public void HandleSwitch(GameFieldGridCell sourceCell, GameFieldGridCell targetCell)
+        {
+            var targetMatches = grid.CheckMatch(targetCell);
+            var sourceMatches = grid.CheckMatch(sourceCell);
+
+            var resultMatches = new List<GameFieldGridCell>();
+
+            if (targetMatches.Count < 3 && sourceMatches.Count < 3)
+            {
+                var switchCommand = new ReverseSwitchCommand(sourceCell, targetCell);
+                Invoker.AddEndedCommand(switchCommand);
+            }
+            else
+            {
+                resultMatches.AddRange(MatchesHandling(targetMatches, targetCell));
+                resultMatches.AddRange(MatchesHandling(sourceMatches, sourceCell));
+
+                var emptyingCommand = new EmptyCellsCommand(resultMatches);
+                Invoker.AddCommand(emptyingCommand);
+            }
+
+        }
+
         /// <summary>
         /// Обрабатывает найденные совпадения.
         /// </summary>
         /// <param name="matches">Список совпадений.</param>
-        public void MatchesHandling(List<GameFieldGridCell> matches)
+        public List<GameFieldGridCell> MatchesHandling(List<GameFieldGridCell> matches, GameFieldGridCell initialCell)
         {
-            if (matches.Count < 3) return;
+            if (matches.Count < 3) matches.Clear();
             if (matches.Count > 3) 
             {
-                var unspecCell = matches.Find(cell => !cell.ContentObject.IsSpecial);
-                unspecCell.ContentObject.SetSpecial();
-                matches.Remove(unspecCell);
-            } 
-            foreach (var item in matches)
-            {
-                item.EmptyCell();
+                var index = matches.IndexOf(initialCell);
+                var unspecialCell = matches[index];
+
+                var specializeCommand = new SpecializeItemCommand(unspecialCell);
+                Invoker.AddCommand(specializeCommand);
+                matches.Remove(unspecialCell);
             }
+            return matches;
         }
 
         /// <summary>

@@ -1,6 +1,7 @@
 ﻿using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
+using Utils;
 
 namespace Gameplay
 {
@@ -52,17 +53,22 @@ namespace Gameplay
                 var result = pointerPosition - objPosition;
                 var x = Mathf.Abs(result.x);
                 var y = Mathf.Abs(result.y);
+
+                DirectionType direction;
                 if (x > y)
                 {
-                    if (result.x > 0) gameplay.MoveCellContent(cell, DirectionType.RIGHT, true);
-                    else gameplay.MoveCellContent(cell, DirectionType.LEFT, true); ;
+                    if (result.x > 0) direction = DirectionType.RIGHT;
+                    else direction = DirectionType.LEFT;
                 }
                 else if (y > x)
                 {
-                    if (result.y > 0) gameplay.MoveCellContent(cell, DirectionType.TOP, true); 
-                    else gameplay.MoveCellContent(cell, DirectionType.DOWN, true);
+                    if (result.y > 0) direction = DirectionType.TOP;
+                    else direction = DirectionType.DOWN;
                 }
+                else return;
 
+                var moveCommand = new MoveItemCommand(cell, direction, true);
+                Invoker.StartCommand(moveCommand);
                 targetObj = null;
             }
         }
